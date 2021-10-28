@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -42,16 +43,19 @@ func main() {
 
 	// users := generateUsers(usersCount)
 
+	wg := &sync.WaitGroup{}
 	for i := 0; i < usersCount; i++ {
-		go saveUserInfo(<-users)
+		wg.Add(1)
+		go saveUserInfo(<-users, wg)
 	}
 
+	wg.Wait()
 	close(users)
 
 	fmt.Printf("DONE! Time Elapsed: %.2f seconds\n", time.Since(startTime).Seconds())
 }
 
-func saveUserInfo(user User) {
+func saveUserInfo(user User, wg *sync.WaitGroup) {
 	fmt.Printf("WRITING FILE FOR UID %d\n", user.id)
 
 	filename := fmt.Sprintf("users/uid%d.txt", user.id)
@@ -62,6 +66,7 @@ func saveUserInfo(user User) {
 
 	file.WriteString(user.getActivityInfo())
 	time.Sleep(time.Second)
+	wg.Done()
 }
 
 func generateUsers(count int, users chan<- User) {
