@@ -37,15 +37,12 @@ func main() {
 	startTime := time.Now()
 
 	const usersCount = 100
-	// jobs := make(chan User, usersCount)
 	users := make(chan User, usersCount)
 	generateUsers(usersCount, users)
 
-	// users := generateUsers(usersCount)
-
 	wg := &sync.WaitGroup{}
+	wg.Add(usersCount)
 	for i := 0; i < usersCount; i++ {
-		wg.Add(1)
 		go saveUserInfo(<-users, wg)
 	}
 
