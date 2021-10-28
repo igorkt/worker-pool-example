@@ -35,11 +35,18 @@ func main() {
 
 	startTime := time.Now()
 
-	users := generateUsers(100)
+	const usersCount = 100
+	// jobs := make(chan User, usersCount)
+	users := make(chan User, usersCount)
+	generateUsers(usersCount, users)
 
-	for _, user := range users {
-		saveUserInfo(user)
+	// users := generateUsers(usersCount)
+
+	for i := 0; i < usersCount; i++ {
+		go saveUserInfo(<-users)
 	}
+
+	close(users)
 
 	fmt.Printf("DONE! Time Elapsed: %.2f seconds\n", time.Since(startTime).Seconds())
 }
@@ -57,20 +64,22 @@ func saveUserInfo(user User) {
 	time.Sleep(time.Second)
 }
 
-func generateUsers(count int) []User {
-	users := make([]User, count)
+func generateUsers(count int, users chan<- User) {
 
 	for i := 0; i < count; i++ {
-		users[i] = User{
-			id:    i + 1,
-			email: fmt.Sprintf("user%d@company.com", i+1),
-			logs:  generateLogs(rand.Intn(1000)),
-		}
-		fmt.Printf("generated user %d\n", i+1)
-		time.Sleep(time.Millisecond * 100)
+		go generateUser(i, users)
 	}
+}
 
-	return users
+func generateUser(i int, users chan<- User) {
+	tempUser := User{
+		id:    i + 1,
+		email: fmt.Sprintf("user%d@company.com", i+1),
+		logs:  generateLogs(rand.Intn(1000)),
+	}
+	users <- tempUser
+	fmt.Printf("generated user %d\n", i+1)
+	time.Sleep(time.Millisecond * 100)
 }
 
 func generateLogs(count int) []logItem {
